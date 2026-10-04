@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    image: jobportal-management:1.0.0
+    container_name: jobportal-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=mysql
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/job_portal?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=portal_user
+      - SPRING_DATASOURCE_PASSWORD=portal_password
+      - APP_ADMIN_EMAIL=admin@jobportal.local
+      - APP_ADMIN_PASSWORD=admin123
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - resume_uploads:/app/uploads
+
+  db:
+    image: mysql:8.0
+    container_name: jobportal-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: job_portal
+      MYSQL_USER: portal_user
+      MYSQL_PASSWORD: portal_password
+      MYSQL_ROOT_PASSWORD: root_secure_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "portal_user", "-pportal_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  db_data:
+  resume_uploads:
